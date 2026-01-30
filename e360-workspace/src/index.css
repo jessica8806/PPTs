@@ -1,0 +1,116 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-family-sans: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --color-slate-50: #f8fafc;
+  --color-slate-100: #f1f5f9;
+  --color-slate-200: #e2e8f0;
+  --color-slate-300: #cbd5e1;
+  --color-slate-400: #94a3b8;
+  --color-slate-500: #64748b;
+  --color-slate-600: #475569;
+  --color-slate-700: #334155;
+  --color-slate-800: #1e293b;
+  --color-slate-900: #0f172a;
+  --color-slate-950: #020617;
+  --color-e360-primary: #1a365d;
+  --color-e360-accent: #2563eb;
+  --color-e360-success: #059669;
+  --color-e360-warning: #d97706;
+  --color-e360-danger: #dc2626;
+}
+
+@layer base {
+  html {
+    font-family: var(--font-family-sans);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    @apply bg-slate-50 text-slate-900 min-h-screen;
+  }
+}
+
+@layer components {
+  .card {
+    @apply bg-white rounded-xl border border-slate-200 shadow-sm;
+  }
+
+  .card-elevated {
+    @apply bg-white rounded-xl border border-slate-200 shadow-md;
+  }
+
+  .signal-card {
+    @apply bg-white rounded-xl border-l-4 p-5 shadow-sm;
+  }
+
+  .signal-card-priority {
+    @apply border-l-e360-warning bg-amber-50/50;
+  }
+
+  .signal-card-opportunity {
+    @apply border-l-e360-success bg-emerald-50/50;
+  }
+
+  .signal-card-risk {
+    @apply border-l-e360-danger bg-red-50/50;
+  }
+
+  .signal-card-info {
+    @apply border-l-e360-accent bg-blue-50/50;
+  }
+
+  .nav-item {
+    @apply flex items-center gap-3 px-4 py-3 text-slate-600 rounded-lg transition-all duration-200 cursor-pointer;
+  }
+
+  .nav-item:hover {
+    @apply bg-slate-100 text-slate-900;
+  }
+
+  .nav-item-active {
+    @apply bg-e360-primary text-white;
+  }
+
+  .nav-item-active:hover {
+    @apply bg-e360-primary text-white;
+  }
+
+  .btn-primary {
+    @apply bg-e360-primary text-white px-4 py-2 rounded-lg font-medium transition-all duration-200;
+  }
+
+  .btn-primary:hover {
+    @apply bg-slate-800;
+  }
+
+  .assistant-input {
+    @apply w-full bg-slate-100 border-0 rounded-xl px-4 py-3 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-e360-accent focus:bg-white transition-all duration-200;
+  }
+
+  .domain-badge {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+  }
+
+  .domain-badge-revenue {
+    @apply bg-emerald-100 text-emerald-800;
+  }
+
+  .domain-badge-solutions {
+    @apply bg-blue-100 text-blue-800;
+  }
+
+  .domain-badge-partners {
+    @apply bg-purple-100 text-purple-800;
+  }
+
+  .domain-badge-delivery {
+    @apply bg-orange-100 text-orange-800;
+  }
+
+  .domain-badge-strategy {
+    @apply bg-slate-200 text-slate-800;
+  }
+}
