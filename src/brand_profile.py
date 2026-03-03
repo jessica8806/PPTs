@@ -83,6 +83,15 @@ class ColorEntry:
         )
 
 
+def _make_color_entry(hex_color: str, confidence: "Confidence", usage_rule: str = "") -> "ColorEntry":
+    """Create a ColorEntry from a hex string (e.g. '#7C6AF7')."""
+    h = hex_color.lstrip("#")
+    if len(h) == 3:
+        h = "".join(c * 2 for c in h)
+    rgb = (int(h[0:2], 16), int(h[2:4], 16), int(h[4:6], 16))
+    return ColorEntry(hex=f"#{h.upper()}", rgb=rgb, confidence=confidence, usage_rule=usage_rule)
+
+
 @dataclass
 class ColorPalette:
     primary: Optional[ColorEntry] = None
