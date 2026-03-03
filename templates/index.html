@@ -1,0 +1,695 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="theme-color" content="#1a1a2e">
+<title>AI Deck Generator</title>
+<style>
+  /* ── Reset & base ── */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:       #0f0f1a;
+    --surface:  #1a1a2e;
+    --card:     #22223b;
+    --border:   #33334d;
+    --primary:  #7c6af7;
+    --primary2: #9d8ff9;
+    --accent:   #f72585;
+    --text:     #e8e8f0;
+    --muted:    #8888aa;
+    --success:  #36d399;
+    --warn:     #fbbd23;
+    --radius:   14px;
+    --radius-sm: 8px;
+  }
+
+  html, body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-size: 15px;
+    line-height: 1.5;
+    min-height: 100dvh;
+  }
+
+  /* ── Layout ── */
+  .app { display: flex; flex-direction: column; min-height: 100dvh; }
+
+  header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 14px 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  header .logo { font-size: 22px; }
+  header h1 { font-size: 17px; font-weight: 700; letter-spacing: -0.3px; }
+  header .sub { font-size: 12px; color: var(--muted); margin-top: 1px; }
+
+  .tab-bar {
+    display: flex;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .tab-bar::-webkit-scrollbar { display: none; }
+  .tab {
+    flex: 1;
+    min-width: 80px;
+    padding: 11px 6px 10px;
+    text-align: center;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--muted);
+    cursor: pointer;
+    border-bottom: 2.5px solid transparent;
+    transition: color .15s, border-color .15s;
+    white-space: nowrap;
+    user-select: none;
+  }
+  .tab.active { color: var(--primary2); border-bottom-color: var(--primary); }
+
+  .panels { flex: 1; overflow: hidden; }
+  .panel { display: none; padding: 20px 16px 100px; animation: fadein .2s; }
+  .panel.active { display: block; }
+  @keyframes fadein { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; } }
+
+  /* ── Cards ── */
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 18px;
+    margin-bottom: 14px;
+  }
+  .card-title {
+    font-size: 13px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .6px;
+    color: var(--muted);
+    margin-bottom: 14px;
+  }
+
+  /* ── Form elements ── */
+  label { display: block; font-size: 13px; color: var(--muted); margin-bottom: 5px; margin-top: 14px; }
+  label:first-child { margin-top: 0; }
+
+  input[type=text], input[type=url], textarea, select {
+    width: 100%;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--text);
+    font-size: 15px;
+    padding: 11px 13px;
+    outline: none;
+    transition: border-color .15s;
+    -webkit-appearance: none;
+    appearance: none;
+  }
+  input[type=text]:focus, input[type=url]:focus, textarea:focus, select:focus {
+    border-color: var(--primary);
+  }
+  textarea { resize: vertical; min-height: 110px; line-height: 1.55; }
+  select { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%238888aa' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat; background-position: right 13px center; padding-right: 36px; }
+
+  /* File upload zone */
+  .upload-zone {
+    border: 2px dashed var(--border);
+    border-radius: var(--radius-sm);
+    padding: 24px 16px;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color .15s, background .15s;
+    position: relative;
+  }
+  .upload-zone:hover, .upload-zone.drag { border-color: var(--primary); background: rgba(124,106,247,.07); }
+  .upload-zone input[type=file] {
+    position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%;
+  }
+  .upload-zone .icon { font-size: 28px; margin-bottom: 6px; }
+  .upload-zone .label { font-size: 14px; color: var(--muted); }
+  .upload-zone .label strong { color: var(--primary2); }
+  .upload-zone .chosen { font-size: 13px; color: var(--success); margin-top: 6px; font-weight: 600; }
+
+  .or-divider {
+    display: flex; align-items: center; gap: 10px;
+    color: var(--muted); font-size: 12px; margin: 12px 0;
+  }
+  .or-divider::before, .or-divider::after {
+    content: ''; flex: 1; height: 1px; background: var(--border);
+  }
+
+  /* ── Buttons ── */
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+    width: 100%;
+    padding: 14px;
+    border: none; border-radius: var(--radius-sm);
+    font-size: 15px; font-weight: 700;
+    cursor: pointer;
+    transition: opacity .15s, transform .1s;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .btn:active { transform: scale(.97); }
+  .btn-primary { background: var(--primary); color: #fff; }
+  .btn-primary:hover { opacity: .9; }
+  .btn-ghost {
+    background: transparent; border: 1px solid var(--border); color: var(--muted);
+    padding: 10px 14px; font-size: 13px;
+  }
+  .btn-danger { background: rgba(247,37,133,.15); color: var(--accent); border: 1px solid rgba(247,37,133,.3); }
+  .btn-sm { padding: 8px 14px; font-size: 13px; width: auto; }
+  .btn:disabled { opacity: .4; cursor: not-allowed; }
+
+  /* ── Profile chips / list ── */
+  .profile-list { display: flex; flex-direction: column; gap: 10px; }
+  .profile-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 13px 14px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    cursor: pointer;
+    transition: border-color .15s;
+  }
+  .profile-card:hover, .profile-card.selected { border-color: var(--primary); }
+  .profile-card.selected { background: rgba(124,106,247,.1); }
+  .color-dot {
+    width: 34px; height: 34px; border-radius: 50%;
+    border: 2px solid rgba(255,255,255,.15);
+    flex-shrink: 0;
+  }
+  .profile-info { flex: 1; min-width: 0; }
+  .profile-name { font-weight: 600; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .profile-meta { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .profile-actions { display: flex; gap: 6px; flex-shrink: 0; }
+  .warn-badge {
+    font-size: 10px; background: rgba(251,189,35,.15); color: var(--warn);
+    border-radius: 4px; padding: 2px 6px; margin-top: 4px; display: inline-block;
+  }
+
+  /* ── Status / toast ── */
+  .status-bar {
+    position: fixed; bottom: 0; left: 0; right: 0;
+    padding: 14px 16px;
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    z-index: 200;
+    display: none;
+  }
+  .status-bar.visible { display: block; }
+  .status-inner { display: flex; align-items: center; gap: 10px; }
+  .spinner {
+    width: 18px; height: 18px; border-radius: 50%;
+    border: 2.5px solid var(--border);
+    border-top-color: var(--primary);
+    animation: spin .7s linear infinite;
+    flex-shrink: 0;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .status-text { flex: 1; font-size: 14px; }
+  .status-close {
+    background: none; border: none; color: var(--muted); cursor: pointer;
+    font-size: 20px; padding: 0 4px; flex-shrink: 0;
+  }
+
+  /* ── Result card ── */
+  .result-card {
+    background: rgba(54,211,153,.08);
+    border: 1px solid rgba(54,211,153,.3);
+    border-radius: var(--radius-sm);
+    padding: 16px;
+    margin-top: 14px;
+    display: none;
+  }
+  .result-card.visible { display: block; animation: fadein .25s; }
+  .result-title { font-weight: 700; color: var(--success); margin-bottom: 8px; }
+  .result-meta { font-size: 13px; color: var(--muted); margin-bottom: 12px; }
+
+  /* ── Empty state ── */
+  .empty { text-align: center; padding: 48px 20px; color: var(--muted); }
+  .empty .icon { font-size: 40px; margin-bottom: 10px; }
+  .empty p { font-size: 14px; line-height: 1.6; }
+
+  /* ── Section headings ── */
+  .section-heading {
+    font-size: 20px; font-weight: 800; letter-spacing: -.4px;
+    margin-bottom: 18px;
+  }
+
+  /* ── Manual profile form grid ── */
+  .color-row { display: flex; align-items: center; gap: 10px; }
+  .color-row input[type=color] {
+    width: 42px; height: 42px; border: 1px solid var(--border);
+    border-radius: var(--radius-sm); background: none; cursor: pointer; padding: 2px;
+    flex-shrink: 0;
+  }
+  .color-row input[type=text] { flex: 1; }
+
+  /* ── Alert ── */
+  .alert {
+    border-radius: var(--radius-sm); padding: 12px 14px;
+    font-size: 13px; margin-bottom: 12px; display: none;
+  }
+  .alert.visible { display: block; animation: fadein .2s; }
+  .alert-error { background: rgba(247,37,133,.1); border: 1px solid rgba(247,37,133,.3); color: #ff6ea3; }
+  .alert-success { background: rgba(54,211,153,.1); border: 1px solid rgba(54,211,153,.3); color: var(--success); }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- Header -->
+  <header>
+    <span class="logo">🎨</span>
+    <div>
+      <h1>AI Deck Generator</h1>
+      <div class="sub">Branded presentations, instantly</div>
+    </div>
+  </header>
+
+  <!-- Tab bar -->
+  <nav class="tab-bar" id="tabBar">
+    <div class="tab active" data-tab="generate">⚡ Generate</div>
+    <div class="tab" data-tab="brands">🎨 Brands</div>
+    <div class="tab" data-tab="extract">📥 Extract</div>
+  </nav>
+
+  <!-- Panels -->
+  <div class="panels">
+
+    <!-- ── GENERATE ── -->
+    <div class="panel active" id="panel-generate">
+      <div class="section-heading">Generate a deck</div>
+
+      <div class="card">
+        <div class="card-title">Brand Profile</div>
+        <div id="selectedProfileDisplay" style="margin-bottom:10px; display:none;">
+          <div class="profile-card selected" id="selectedProfileCard">
+            <div class="color-dot" id="selColor"></div>
+            <div class="profile-info">
+              <div class="profile-name" id="selName">—</div>
+              <div class="profile-meta" id="selMeta">—</div>
+            </div>
+            <button class="btn btn-ghost btn-sm" onclick="clearSelectedProfile()">Change</button>
+          </div>
+        </div>
+        <div id="profilePickerInline">
+          <div id="inlineProfileList" class="profile-list">
+            <div class="empty"><div class="icon">🎨</div><p>No brands yet.<br>Go to the Brands tab to add one.</p></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Content</div>
+        <label>Paste text or outline</label>
+        <textarea id="genText" placeholder="# My Presentation&#10;## Slide 1&#10;- Bullet point&#10;&#10;Or just paste raw notes…" rows="6"></textarea>
+
+        <div class="or-divider">or upload a file</div>
+
+        <div class="upload-zone" id="contentZone">
+          <input type="file" id="contentFile" accept=".pdf,.docx,.md,.txt,.csv,.xlsx" onchange="onContentFile(this)">
+          <div class="icon">📄</div>
+          <div class="label">Tap to choose <strong>.md / .txt / .docx / .pdf / .csv</strong></div>
+          <div class="chosen" id="contentFileChosen" style="display:none"></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Options</div>
+        <label>Purpose</label>
+        <select id="genPurpose">
+          <option>General</option><option>Pitch</option><option>Proposal</option>
+          <option>Report</option><option>Board</option><option>Strategy</option>
+          <option>Training</option><option>Sales</option><option>Event</option>
+          <option>Investor</option>
+        </select>
+
+        <label>Audience</label>
+        <input type="text" id="genAudience" placeholder="e.g. Executive, Client, Technical team" value="General">
+
+        <label>Content density</label>
+        <select id="genDensity">
+          <option>Low</option><option selected>Medium</option><option>High</option>
+        </select>
+
+        <label>Target slides (blank = auto)</label>
+        <input type="text" id="genSlides" placeholder="Auto" style="width:120px">
+      </div>
+
+      <div id="genError" class="alert alert-error"></div>
+      <button class="btn btn-primary" id="genBtn" onclick="generate()">✨ Generate Presentation</button>
+
+      <div class="result-card" id="genResult">
+        <div class="result-title">✅ Ready to download!</div>
+        <div class="result-meta" id="genResultMeta"></div>
+        <a id="genDownloadLink" href="#" class="btn btn-primary" download>⬇ Download .pptx</a>
+      </div>
+    </div>
+
+    <!-- ── BRANDS ── -->
+    <div class="panel" id="panel-brands">
+      <div class="section-heading">Brand Profiles</div>
+      <div id="brandError" class="alert alert-error"></div>
+      <div id="brandSuccess" class="alert alert-success"></div>
+      <div id="profileList" class="profile-list">
+        <div class="empty"><div class="icon">🎨</div><p>No profiles yet.<br>Use the Extract tab to create one.</p></div>
+      </div>
+    </div>
+
+    <!-- ── EXTRACT ── -->
+    <div class="panel" id="panel-extract">
+      <div class="section-heading">Add Brand Profile</div>
+      <div id="extractError" class="alert alert-error"></div>
+      <div id="extractSuccess" class="alert alert-success"></div>
+
+      <!-- File / URL extraction -->
+      <div class="card">
+        <div class="card-title">From Reference Material</div>
+        <label>Brand name</label>
+        <input type="text" id="extName" placeholder="e.g. Acme Corp">
+
+        <label>Upload brand guide or logo</label>
+        <div class="upload-zone" id="extractZone">
+          <input type="file" id="extractFile" accept=".pdf,.pptx,.png,.jpg,.jpeg,.webp,.svg" onchange="onExtractFile(this)">
+          <div class="icon">📋</div>
+          <div class="label">Tap to choose <strong>PDF / PPTX / PNG / SVG</strong></div>
+          <div class="chosen" id="extractFileChosen" style="display:none"></div>
+        </div>
+
+        <div class="or-divider">or enter a URL</div>
+
+        <input type="url" id="extUrl" placeholder="https://example.com">
+
+        <div style="margin-top:16px">
+          <button class="btn btn-primary" onclick="extractFromFile()">🔍 Extract Brand Profile</button>
+        </div>
+      </div>
+
+      <!-- Manual entry -->
+      <div class="card">
+        <div class="card-title">Manual Entry</div>
+        <label>Brand name</label>
+        <input type="text" id="manName" placeholder="e.g. Acme Corp">
+
+        <label>Primary color</label>
+        <div class="color-row">
+          <input type="color" id="manColorPicker" value="#7c6af7" oninput="syncColor(this,'manPrimary')">
+          <input type="text" id="manPrimary" value="#7C6AF7" placeholder="#RRGGBB" oninput="syncColorPicker(this,'manColorPicker')">
+        </div>
+
+        <label>Heading font</label>
+        <input type="text" id="manHeadingFont" placeholder="e.g. Montserrat">
+
+        <label>Body font</label>
+        <input type="text" id="manBodyFont" placeholder="e.g. Inter">
+
+        <label>Writing tone</label>
+        <select id="manTone">
+          <option value="formal">Formal</option>
+          <option value="conversational">Conversational</option>
+          <option value="technical">Technical</option>
+          <option value="inspirational">Inspirational</option>
+        </select>
+
+        <div style="margin-top:16px">
+          <button class="btn btn-primary" onclick="createManual()">💾 Save Profile</button>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /panels -->
+
+  <!-- Status bar -->
+  <div class="status-bar" id="statusBar">
+    <div class="status-inner">
+      <div class="spinner" id="statusSpinner"></div>
+      <div class="status-text" id="statusText">Working…</div>
+      <button class="status-close" onclick="hideStatus()">×</button>
+    </div>
+  </div>
+
+</div><!-- /app -->
+
+<script>
+// ── State ──────────────────────────────────────────────────────────────
+let profiles = [];
+let selectedProfileId = null;
+
+// ── Tab navigation ─────────────────────────────────────────────────────
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById('panel-' + tab.dataset.tab).classList.add('active');
+    if (tab.dataset.tab === 'brands' || tab.dataset.tab === 'generate') loadProfiles();
+  });
+});
+
+// ── Status bar ────────────────────────────────────────────────────────
+function showStatus(msg) {
+  document.getElementById('statusText').textContent = msg;
+  document.getElementById('statusSpinner').style.display = '';
+  document.getElementById('statusBar').classList.add('visible');
+}
+function hideStatus() { document.getElementById('statusBar').classList.remove('visible'); }
+function showError(id, msg) {
+  const el = document.getElementById(id);
+  el.textContent = '⚠ ' + msg;
+  el.classList.add('visible');
+  setTimeout(() => el.classList.remove('visible'), 6000);
+}
+function showSuccess(id, msg) {
+  const el = document.getElementById(id);
+  el.textContent = '✅ ' + msg;
+  el.classList.add('visible');
+  setTimeout(() => el.classList.remove('visible'), 4000);
+}
+
+// ── File input helpers ─────────────────────────────────────────────────
+function onExtractFile(input) {
+  const el = document.getElementById('extractFileChosen');
+  el.textContent = input.files[0]?.name || '';
+  el.style.display = input.files[0] ? 'block' : 'none';
+}
+function onContentFile(input) {
+  const el = document.getElementById('contentFileChosen');
+  el.textContent = input.files[0]?.name || '';
+  el.style.display = input.files[0] ? 'block' : 'none';
+}
+
+// ── Color sync ────────────────────────────────────────────────────────
+function syncColor(picker, textId) {
+  document.getElementById(textId).value = picker.value.toUpperCase();
+}
+function syncColorPicker(text, pickerId) {
+  const v = text.value.trim();
+  if (/^#[0-9a-fA-F]{6}$/.test(v)) document.getElementById(pickerId).value = v;
+}
+
+// ── Load profiles ─────────────────────────────────────────────────────
+async function loadProfiles() {
+  try {
+    const res = await fetch('/api/profiles');
+    profiles = await res.json();
+    renderBrandsList();
+    renderInlineProfileList();
+  } catch(e) { console.error(e); }
+}
+
+function renderBrandsList() {
+  const list = document.getElementById('profileList');
+  if (!profiles.length) {
+    list.innerHTML = '<div class="empty"><div class="icon">🎨</div><p>No profiles yet.<br>Use the Extract tab to create one.</p></div>';
+    return;
+  }
+  list.innerHTML = profiles.map(p => `
+    <div class="profile-card" onclick="selectProfile('${p.id}')">
+      <div class="color-dot" style="background:${p.primary_color || '#555'}"></div>
+      <div class="profile-info">
+        <div class="profile-name">${esc(p.name)}</div>
+        <div class="profile-meta">${esc(p.heading_font || 'No font')} · Updated ${esc(p.updated_at)}</div>
+        ${p.review_flags?.length ? `<span class="warn-badge">⚠ ${p.review_flags.length} field${p.review_flags.length>1?'s':''} need review</span>` : ''}
+      </div>
+      <div class="profile-actions">
+        <button class="btn btn-danger btn-sm" onclick="event.stopPropagation();archiveProfile('${p.id}')">🗑</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function renderInlineProfileList() {
+  const list = document.getElementById('inlineProfileList');
+  if (selectedProfileId) return; // already selected
+  if (!profiles.length) {
+    list.innerHTML = '<div class="empty"><div class="icon">🎨</div><p>No brands yet.<br>Go to the Brands tab to add one.</p></div>';
+    return;
+  }
+  list.innerHTML = profiles.map(p => `
+    <div class="profile-card ${p.id===selectedProfileId?'selected':''}" onclick="selectAndUse('${p.id}','${esc(p.name)}','${p.primary_color||'#555'}','${esc(p.heading_font||'')}')">
+      <div class="color-dot" style="background:${p.primary_color || '#555'}"></div>
+      <div class="profile-info">
+        <div class="profile-name">${esc(p.name)}</div>
+        <div class="profile-meta">${esc(p.heading_font || 'No font')}</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function selectAndUse(id, name, color, font) {
+  selectedProfileId = id;
+  document.getElementById('selName').textContent = name;
+  document.getElementById('selMeta').textContent = font || 'No font specified';
+  document.getElementById('selColor').style.background = color;
+  document.getElementById('selectedProfileDisplay').style.display = 'block';
+  document.getElementById('profilePickerInline').style.display = 'none';
+}
+
+function clearSelectedProfile() {
+  selectedProfileId = null;
+  document.getElementById('selectedProfileDisplay').style.display = 'none';
+  document.getElementById('profilePickerInline').style.display = 'block';
+  renderInlineProfileList();
+}
+
+function selectProfile(id) {
+  // In brands tab — just highlight
+  document.querySelectorAll('#profileList .profile-card').forEach(c => c.classList.remove('selected'));
+  event.currentTarget.classList.add('selected');
+}
+
+// ── Archive profile ────────────────────────────────────────────────────
+async function archiveProfile(id) {
+  if (!confirm('Remove this brand profile?')) return;
+  showStatus('Removing profile…');
+  try {
+    await fetch('/api/profiles/' + id, { method: 'DELETE' });
+    if (selectedProfileId === id) clearSelectedProfile();
+    await loadProfiles();
+    showSuccess('brandSuccess', 'Profile removed.');
+  } catch(e) { showError('brandError', e.message); }
+  hideStatus();
+}
+
+// ── Extract profile ────────────────────────────────────────────────────
+async function extractFromFile() {
+  const name = document.getElementById('extName').value.trim() || 'Brand';
+  const url  = document.getElementById('extUrl').value.trim();
+  const file = document.getElementById('extractFile').files[0];
+
+  if (!file && !url) { showError('extractError', 'Choose a file or enter a URL.'); return; }
+
+  showStatus('Extracting brand profile… this may take 15–30 seconds.');
+  const fd = new FormData();
+  fd.append('name', name);
+  if (file) fd.append('file', file);
+  if (url)  fd.append('url', url);
+
+  try {
+    const res  = await fetch('/api/profiles/extract', { method: 'POST', body: fd });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Extraction failed');
+    showSuccess('extractSuccess', `Brand profile "${data.name}" created!`);
+    document.getElementById('extName').value = '';
+    document.getElementById('extUrl').value = '';
+    document.getElementById('extractFile').value = '';
+    document.getElementById('extractFileChosen').style.display = 'none';
+    await loadProfiles();
+    if (data.review_flags?.length) {
+      showError('extractError', `Extracted with ${data.review_flags.length} low-confidence field(s) — check the Brands tab.`);
+    }
+  } catch(e) { showError('extractError', e.message); }
+  hideStatus();
+}
+
+// ── Manual profile ─────────────────────────────────────────────────────
+async function createManual() {
+  const name  = document.getElementById('manName').value.trim() || 'Brand';
+  const color = document.getElementById('manPrimary').value.trim();
+  const hFont = document.getElementById('manHeadingFont').value.trim();
+  const bFont = document.getElementById('manBodyFont').value.trim();
+  const tone  = document.getElementById('manTone').value;
+
+  const body = { name };
+  if (color) body.primary_color = color;
+  if (hFont) body.heading_font  = hFont;
+  if (bFont) body.body_font     = bFont;
+  if (tone)  body.writing_tone  = tone;
+
+  showStatus('Saving profile…');
+  try {
+    const res  = await fetch('/api/profiles/manual', {
+      method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(body)
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Save failed');
+    showSuccess('extractSuccess', `Profile "${data.name}" saved!`);
+    document.getElementById('manName').value = '';
+    await loadProfiles();
+  } catch(e) { showError('extractError', e.message); }
+  hideStatus();
+}
+
+// ── Generate ──────────────────────────────────────────────────────────
+async function generate() {
+  if (!selectedProfileId) { showError('genError','Select a brand profile first.'); return; }
+
+  const text = document.getElementById('genText').value.trim();
+  const file = document.getElementById('contentFile').files[0];
+  if (!text && !file) { showError('genError','Add some content — paste text or upload a file.'); return; }
+
+  showStatus('Processing content & generating deck… may take 30–60 seconds.');
+  document.getElementById('genBtn').disabled = true;
+  document.getElementById('genResult').classList.remove('visible');
+  document.getElementById('genError').classList.remove('visible');
+
+  const fd = new FormData();
+  fd.append('profile_id', selectedProfileId);
+  fd.append('purpose',    document.getElementById('genPurpose').value);
+  fd.append('audience',   document.getElementById('genAudience').value);
+  fd.append('density',    document.getElementById('genDensity').value);
+  const slides = document.getElementById('genSlides').value.trim();
+  if (slides) fd.append('target_slides', slides);
+  if (text) fd.append('text', text);
+  if (file) fd.append('file', file);
+
+  try {
+    const res  = await fetch('/api/generate', { method: 'POST', body: fd });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Generation failed');
+
+    const link = document.getElementById('genDownloadLink');
+    link.href = data.download_url;
+    link.download = data.filename;
+    document.getElementById('genResultMeta').textContent =
+      `"${data.title}" · ${data.slide_count} slides`;
+    document.getElementById('genResult').classList.add('visible');
+  } catch(e) { showError('genError', e.message); }
+
+  hideStatus();
+  document.getElementById('genBtn').disabled = false;
+}
+
+function esc(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ── Init ──────────────────────────────────────────────────────────────
+loadProfiles();
+</script>
+</body>
+</html>
