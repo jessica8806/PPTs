@@ -1,0 +1,916 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PM Operations Toolkit</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --gold: #C8A96E;
+      --gold-hover: #b8965a;
+      --navy: #1a1f2e;
+      --navy-light: #252c3f;
+      --bg: #ffffff;
+      --surface: #f9fafb;
+      --border: #e5e7eb;
+      --text: #111827;
+      --text-muted: #6b7280;
+      --red-bg: #fef2f2;
+      --red-border: #fecaca;
+      --red-text: #991b1b;
+      --green-bg: #f0fdf4;
+      --green-border: #bbf7d0;
+      --green-text: #166534;
+      --yellow-bg: #fefce8;
+      --yellow-border: #fde68a;
+      --yellow-text: #92400e;
+      --radius: 8px;
+      --shadow: 0 1px 3px rgba(0,0,0,.08), 0 1px 2px rgba(0,0,0,.05);
+      --shadow-md: 0 4px 6px -1px rgba(0,0,0,.08), 0 2px 4px -2px rgba(0,0,0,.05);
+    }
+
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      font-size: 14px;
+      line-height: 1.5;
+      min-height: 100vh;
+    }
+
+    /* ── Header ── */
+    header {
+      background: var(--navy);
+      padding: 20px 32px;
+    }
+    header h1 {
+      color: #ffffff;
+      font-size: 20px;
+      font-weight: 700;
+      letter-spacing: -0.3px;
+    }
+    header p {
+      color: #9ca3af;
+      font-size: 13px;
+      margin-top: 2px;
+    }
+    header h1 span { color: var(--gold); }
+
+    /* ── Tab nav ── */
+    .tab-nav {
+      background: var(--navy-light);
+      display: flex;
+      gap: 4px;
+      padding: 0 32px;
+      border-bottom: 1px solid rgba(255,255,255,.06);
+      overflow-x: auto;
+    }
+    .tab-btn {
+      background: none;
+      border: none;
+      color: #9ca3af;
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 500;
+      padding: 14px 18px;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      white-space: nowrap;
+      transition: color .15s, border-color .15s;
+    }
+    .tab-btn:hover { color: #e5e7eb; }
+    .tab-btn.active {
+      color: var(--gold);
+      border-bottom-color: var(--gold);
+    }
+
+    /* ── Main layout ── */
+    main { padding: 28px 32px; max-width: 1280px; margin: 0 auto; }
+
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    /* Two-column layout */
+    .two-col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      align-items: start;
+    }
+    @media (max-width: 768px) {
+      main { padding: 20px 16px; }
+      .tab-nav { padding: 0 16px; }
+      header { padding: 16px; }
+      .two-col { grid-template-columns: 1fr; }
+    }
+
+    /* ── Cards ── */
+    .card {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 24px;
+      box-shadow: var(--shadow);
+    }
+    .card-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 18px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .card-title-icon {
+      width: 22px;
+      height: 22px;
+      border-radius: 5px;
+      background: var(--gold);
+      opacity: .9;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-size: 11px;
+    }
+
+    /* ── Form elements ── */
+    .field { margin-bottom: 16px; }
+    .field:last-of-type { margin-bottom: 20px; }
+    label {
+      display: block;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: .5px;
+      margin-bottom: 6px;
+    }
+    textarea, input[type="text"], input[type="date"], select {
+      width: 100%;
+      font-family: inherit;
+      font-size: 13.5px;
+      color: var(--text);
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 10px 12px;
+      transition: border-color .15s, box-shadow .15s;
+      outline: none;
+      appearance: none;
+      -webkit-appearance: none;
+    }
+    textarea:focus, input[type="text"]:focus, input[type="date"]:focus, select:focus {
+      border-color: var(--gold);
+      box-shadow: 0 0 0 3px rgba(200,169,110,.12);
+    }
+    textarea { resize: vertical; line-height: 1.6; }
+
+    /* ── Tone toggle ── */
+    .tone-toggle {
+      display: flex;
+      gap: 0;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      overflow: hidden;
+      width: fit-content;
+    }
+    .tone-btn {
+      background: var(--surface);
+      border: none;
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-muted);
+      padding: 8px 20px;
+      cursor: pointer;
+      transition: background .15s, color .15s;
+    }
+    .tone-btn.active {
+      background: var(--gold);
+      color: #fff;
+    }
+    .tone-btn:not(.active):hover { background: #f3f4f6; }
+
+    /* ── Gold button ── */
+    .btn-gold {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--gold);
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      font-family: inherit;
+      font-size: 13.5px;
+      font-weight: 600;
+      padding: 10px 20px;
+      cursor: pointer;
+      transition: background .15s, transform .1s;
+      width: 100%;
+      justify-content: center;
+    }
+    .btn-gold:hover:not(:disabled) { background: var(--gold-hover); }
+    .btn-gold:active:not(:disabled) { transform: translateY(1px); }
+    .btn-gold:disabled { opacity: .65; cursor: not-allowed; }
+
+    /* ── Copy button ── */
+    .btn-copy {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: none;
+      border: 1px solid var(--border);
+      border-radius: 5px;
+      font-family: inherit;
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text-muted);
+      padding: 5px 12px;
+      cursor: pointer;
+      transition: background .15s, color .15s, border-color .15s;
+    }
+    .btn-copy:hover { background: var(--surface); color: var(--text); border-color: #d1d5db; }
+    .btn-copy.copied { color: var(--green-text); border-color: var(--green-border); background: var(--green-bg); }
+
+    /* ── Output panel ── */
+    .output-panel {
+      min-height: 260px;
+    }
+    .output-empty {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 260px;
+      color: var(--text-muted);
+      font-size: 13px;
+      text-align: center;
+      gap: 10px;
+    }
+    .output-empty-icon {
+      font-size: 28px;
+      opacity: .35;
+    }
+
+    /* Loading */
+    .loading-wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 260px;
+      gap: 14px;
+      color: var(--text-muted);
+      font-size: 13px;
+    }
+    .spinner {
+      width: 36px;
+      height: 36px;
+      border: 3px solid var(--border);
+      border-top-color: var(--gold);
+      border-radius: 50%;
+      animation: spin .7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Triage result ── */
+    .section-label {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .7px;
+      margin-bottom: 10px;
+      margin-top: 20px;
+    }
+    .section-label:first-child { margin-top: 0; }
+
+    .task-cards { display: flex; flex-direction: column; gap: 8px; }
+    .task-card {
+      border-radius: 6px;
+      padding: 12px 14px;
+      font-size: 13px;
+    }
+    .task-card.locked {
+      background: var(--red-bg);
+      border: 1px solid var(--red-border);
+    }
+    .task-card.locked .tc-name { color: var(--red-text); font-weight: 600; }
+    .task-card.moveable {
+      background: var(--green-bg);
+      border: 1px solid var(--green-border);
+    }
+    .task-card.moveable .tc-name { color: var(--green-text); font-weight: 600; }
+    .tc-meta { font-size: 12px; color: var(--text-muted); margin-top: 3px; }
+    .tc-note { font-size: 12px; margin-top: 5px; font-style: italic; }
+
+    .timeline-box {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 12px 14px;
+      font-size: 13px;
+      color: var(--text);
+      line-height: 1.6;
+    }
+
+    .draft-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 10px;
+    }
+    .draft-body {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 14px;
+      font-size: 13px;
+      line-height: 1.7;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    /* ── Deadline reset result ── */
+    .message-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+    .message-body {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 16px;
+      font-size: 13.5px;
+      line-height: 1.8;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    /* ── Audit result ── */
+    .stat-cards {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+    .stat-card {
+      border-radius: 8px;
+      padding: 16px;
+      text-align: center;
+    }
+    .stat-card.met { background: var(--green-bg); border: 1px solid var(--green-border); }
+    .stat-card.partial { background: var(--yellow-bg); border: 1px solid var(--yellow-border); }
+    .stat-card.missing { background: var(--red-bg); border: 1px solid var(--red-border); }
+    .stat-number {
+      font-size: 28px;
+      font-weight: 700;
+      line-height: 1;
+      margin-bottom: 4px;
+    }
+    .stat-card.met .stat-number { color: var(--green-text); }
+    .stat-card.partial .stat-number { color: #b45309; }
+    .stat-card.missing .stat-number { color: var(--red-text); }
+    .stat-label { font-size: 12px; font-weight: 500; }
+    .stat-card.met .stat-label { color: var(--green-text); }
+    .stat-card.partial .stat-label { color: #b45309; }
+    .stat-card.missing .stat-label { color: var(--red-text); }
+
+    .req-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .req-table th {
+      text-align: left;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .5px;
+      color: var(--text-muted);
+      padding: 8px 10px;
+      border-bottom: 1px solid var(--border);
+    }
+    .req-table td {
+      padding: 10px 10px;
+      border-bottom: 1px solid var(--border);
+      vertical-align: top;
+      line-height: 1.5;
+    }
+    .req-table tr:last-child td { border-bottom: none; }
+    .req-table tr:hover td { background: var(--surface); }
+
+    .badge {
+      display: inline-block;
+      padding: 2px 9px;
+      border-radius: 99px;
+      font-size: 11px;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+    .badge-met { background: var(--green-bg); color: var(--green-text); border: 1px solid var(--green-border); }
+    .badge-partial { background: var(--yellow-bg); color: #92400e; border: 1px solid var(--yellow-border); }
+    .badge-missing { background: var(--red-bg); color: var(--red-text); border: 1px solid var(--red-border); }
+
+    .audit-sections-below { margin-top: 28px; }
+
+    .divider {
+      height: 1px;
+      background: var(--border);
+      margin: 24px 0;
+    }
+
+    /* Tab 3 top section */
+    .audit-inputs { margin-bottom: 20px; }
+    .audit-inputs .two-col { margin-bottom: 16px; }
+    .audit-controls {
+      display: flex;
+      gap: 16px;
+      align-items: flex-end;
+      flex-wrap: wrap;
+    }
+    .audit-controls .field { margin-bottom: 0; flex: 1; min-width: 180px; }
+    .audit-controls .btn-gold { width: auto; flex: 0 0 auto; min-width: 140px; }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>PM <span>Operations</span> Toolkit</h1>
+  <p>AI-assisted project management for high-volume teams</p>
+</header>
+
+<nav class="tab-nav">
+  <button class="tab-btn active" data-tab="triage">Rush Request Triage</button>
+  <button class="tab-btn" data-tab="deadline">Deadline Reset Generator</button>
+  <button class="tab-btn" data-tab="audit">Brief vs. Deliverable Audit</button>
+</nav>
+
+<main>
+
+  <!-- ══════════════════════════════════════════
+       TAB 1 — RUSH REQUEST TRIAGE
+  ══════════════════════════════════════════ -->
+  <div id="tab-triage" class="tab-panel active">
+    <div class="two-col">
+
+      <!-- Input -->
+      <div class="card">
+        <div class="card-title">
+          <span class="card-title-icon">⚡</span>
+          Capacity Inputs
+        </div>
+
+        <div class="field">
+          <label>Current Task Board</label>
+          <textarea id="triage-tasks" rows="9" placeholder="Paste your active tasks here. Format: Task name | Hours remaining | Due date.">Brand guidelines refresh | 4 hrs | Tomorrow 5pm
+Social media calendar (April) | 3 hrs | Friday EOD
+Coastal Realty homepage banner | 2 hrs | Today 4pm</textarea>
+        </div>
+
+        <div class="field">
+          <label>Rush Request</label>
+          <textarea id="triage-rush" rows="5" placeholder="Describe the rush request…">Coastal Realty needs their Q2 email campaign copy revised and approved today by 3pm. Changes include updated subject lines, a new promotional offer, and revised CTA buttons across 3 email variants.</textarea>
+        </div>
+
+        <button class="btn-gold" id="btn-triage">
+          <span>Analyze Capacity</span>
+        </button>
+      </div>
+
+      <!-- Output -->
+      <div class="card output-panel" id="triage-output">
+        <div class="output-empty" id="triage-empty">
+          <div class="output-empty-icon">📋</div>
+          <div>Your triage report will appear here.</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════
+       TAB 2 — DEADLINE RESET GENERATOR
+  ══════════════════════════════════════════ -->
+  <div id="tab-deadline" class="tab-panel">
+    <div class="two-col">
+
+      <!-- Input form -->
+      <div class="card">
+        <div class="card-title">
+          <span class="card-title-icon">📅</span>
+          Deadline Details
+        </div>
+
+        <div class="two-col" style="gap: 12px; margin-bottom: 0;">
+          <div class="field">
+            <label>Client Name</label>
+            <input type="text" id="dl-client" value="Marcus Webb" />
+          </div>
+          <div class="field">
+            <label>Project Name</label>
+            <input type="text" id="dl-project" value="Elevate Fitness Website Launch" />
+          </div>
+        </div>
+
+        <div class="two-col" style="gap: 12px; margin-bottom: 0;">
+          <div class="field">
+            <label>Original Deadline</label>
+            <input type="text" id="dl-original" value="This Friday, April 4" />
+          </div>
+          <div class="field">
+            <label>Revised Deadline</label>
+            <input type="text" id="dl-revised" value="Wednesday, April 9" />
+          </div>
+        </div>
+
+        <div class="field">
+          <label>Reason for Change</label>
+          <select id="dl-reason">
+            <option>Scope expanded mid-project</option>
+            <option>Team capacity constraint</option>
+            <option>Awaiting client approval or assets</option>
+            <option selected>Technical complexity underestimated</option>
+            <option>Other</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label>Additional Context <span style="font-weight:400;text-transform:none;letter-spacing:0;">(optional)</span></label>
+          <textarea id="dl-context" rows="3">The custom booking integration requires third-party API work we did not fully scope during discovery. We have a solution in place and are moving quickly.</textarea>
+        </div>
+
+        <div class="field">
+          <label>Tone</label>
+          <div class="tone-toggle">
+            <button class="tone-btn active" data-tone="Professional">Professional</button>
+            <button class="tone-btn" data-tone="Conversational">Conversational</button>
+          </div>
+        </div>
+
+        <button class="btn-gold" id="btn-deadline">
+          <span>Generate Message</span>
+        </button>
+      </div>
+
+      <!-- Output -->
+      <div class="card output-panel" id="deadline-output">
+        <div class="output-empty" id="deadline-empty">
+          <div class="output-empty-icon">✉️</div>
+          <div>Your deadline reset message will appear here.</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════
+       TAB 3 — BRIEF vs. DELIVERABLE AUDIT
+  ══════════════════════════════════════════ -->
+  <div id="tab-audit" class="tab-panel">
+
+    <div class="card audit-inputs">
+      <div class="card-title">
+        <span class="card-title-icon">🔍</span>
+        Audit Inputs
+      </div>
+
+      <div class="two-col" style="margin-bottom: 16px;">
+        <div class="field" style="margin-bottom:0;">
+          <label>Original Brief</label>
+          <textarea id="audit-brief" rows="10">Client: ClearView Pros (home services)
+Campaign: Facebook Ad — Spring Promotion
+
+Requirements:
+- Word count: maximum 125 words
+- Promotional offer: highlight "20% off your first service"
+- CTA: must use exact phrase "Book Your Free Estimate"
+- Tone: professional but approachable — friendly, not corporate
+- Language: do NOT use the word "cheap"
+- Headline: lead with a benefit, not the company name</textarea>
+        </div>
+        <div class="field" style="margin-bottom:0;">
+          <label>Deliverable</label>
+          <textarea id="audit-deliverable" rows="10">Tired of overpaying for home services that don't deliver? ClearView Pros is here to change that. We offer cheap, reliable solutions for all your home maintenance needs — from plumbing to electrical to deep cleaning. Our licensed team shows up on time, every time. No hidden fees, no hassle, just quality work you can count on. Spring is the perfect time to get your home in shape, and we're ready to help. Whether it's a quick fix or a full renovation project, ClearView Pros has you covered. Call us today or visit our website to get started and discover why thousands of homeowners across the region trust us with their most important investment.
+
+Get Started Today!</textarea>
+        </div>
+      </div>
+
+      <div class="audit-controls">
+        <div class="field">
+          <label>Deliverable Type</label>
+          <select id="audit-type">
+            <option selected>Copy</option>
+            <option>Design Spec</option>
+            <option>Automation Logic</option>
+            <option>Site Build</option>
+          </select>
+        </div>
+        <button class="btn-gold audit-controls" id="btn-audit" style="width:auto;min-width:140px;align-self:flex-end;margin-bottom:0;">
+          <span>Run Audit</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Output -->
+    <div id="audit-output">
+      <div class="output-empty" id="audit-empty" style="padding:48px 0; border:1px solid var(--border); border-radius:var(--radius); text-align:center; color:var(--text-muted); font-size:13px; display:flex; flex-direction:column; align-items:center; gap:10px;">
+        <div class="output-empty-icon">📊</div>
+        <div>Your audit report will appear here.</div>
+      </div>
+      <div id="audit-results" style="display:none;">
+        <div class="stat-cards" id="audit-stats"></div>
+        <div class="card" style="overflow:auto;">
+          <div class="card-title"><span class="card-title-icon">📋</span>Requirements Check</div>
+          <table class="req-table" id="audit-table">
+            <thead>
+              <tr>
+                <th style="width:40%;">Requirement</th>
+                <th style="width:15%;">Status</th>
+                <th>Revision Note</th>
+              </tr>
+            </thead>
+            <tbody id="audit-tbody"></tbody>
+          </table>
+        </div>
+        <div class="card" style="margin-top:16px;">
+          <div class="draft-header">
+            <div class="card-title" style="margin-bottom:0;"><span class="card-title-icon">📝</span>Revision Brief</div>
+            <button class="btn-copy" id="copy-revision">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+              Copy
+            </button>
+          </div>
+          <div class="draft-body" id="audit-revision"></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+</main>
+
+<script>
+// ── Tab switching ──────────────────────────────────
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+  });
+});
+
+// ── Tone toggle ────────────────────────────────────
+let selectedTone = 'Professional';
+document.querySelectorAll('.tone-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tone-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    selectedTone = btn.dataset.tone;
+  });
+});
+
+// ── Helpers ────────────────────────────────────────
+function showLoading(container) {
+  container.innerHTML = `
+    <div class="loading-wrap">
+      <div class="spinner"></div>
+      <div>Analyzing with Claude AI…</div>
+    </div>`;
+}
+
+function copyText(text, btn) {
+  navigator.clipboard.writeText(text).then(() => {
+    btn.classList.add('copied');
+    btn.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Copied!`;
+    setTimeout(() => {
+      btn.classList.remove('copied');
+      btn.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy`;
+    }, 2000);
+  });
+}
+
+// ── Tab 1: Triage ──────────────────────────────────
+document.getElementById('btn-triage').addEventListener('click', async () => {
+  const taskBoard = document.getElementById('triage-tasks').value.trim();
+  const rushRequest = document.getElementById('triage-rush').value.trim();
+  const output = document.getElementById('triage-output');
+  const btn = document.getElementById('btn-triage');
+
+  if (!taskBoard || !rushRequest) {
+    alert('Please fill in both fields.');
+    return;
+  }
+
+  btn.disabled = true;
+  showLoading(output);
+
+  try {
+    const res = await fetch('/api/pm/triage', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ taskBoard, rushRequest })
+    });
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+    renderTriage(output, data);
+  } catch (e) {
+    output.innerHTML = `<div style="color:#dc2626;padding:16px;font-size:13px;">Error: ${e.message}</div>`;
+  } finally {
+    btn.disabled = false;
+  }
+});
+
+function renderTriage(container, d) {
+  const lockedHTML = (d.lockedTasks || []).map(t => `
+    <div class="task-card locked">
+      <div class="tc-name">${esc(t.name)}</div>
+      <div class="tc-meta">${esc(t.hoursRemaining || '')} · Due: ${esc(t.dueDate || '')}</div>
+      <div class="tc-note">${esc(t.reason || '')}</div>
+    </div>`).join('') || '<div class="tc-meta">None identified</div>';
+
+  const moveableHTML = (d.moveableTasks || []).map(t => `
+    <div class="task-card moveable">
+      <div class="tc-name">${esc(t.name)}</div>
+      <div class="tc-meta">${esc(t.hoursRemaining || '')} · Due: ${esc(t.dueDate || '')}</div>
+      <div class="tc-note">${esc(t.suggestion || '')}</div>
+    </div>`).join('') || '<div class="tc-meta">None identified</div>';
+
+  const draftText = d.draftResponse || '';
+
+  container.innerHTML = `
+    <div class="section-label" style="color:var(--red-text);">🔒 Locked Tasks</div>
+    <div class="task-cards">${lockedHTML}</div>
+
+    <div class="section-label" style="color:var(--green-text);">✅ Moveable Tasks</div>
+    <div class="task-cards">${moveableHTML}</div>
+
+    <div class="section-label" style="color:var(--text-muted);">📅 Recommended Timeline</div>
+    <div class="timeline-box">${esc(d.timeline || '')}</div>
+
+    <div class="section-label" style="color:var(--text-muted);">✉️ Draft Client Response</div>
+    <div class="draft-header">
+      <span style="font-size:12px;color:var(--text-muted);">Ready to copy and send</span>
+      <button class="btn-copy" id="copy-draft">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+        Copy
+      </button>
+    </div>
+    <div class="draft-body" id="draft-text">${esc(draftText)}</div>
+  `;
+
+  document.getElementById('copy-draft').addEventListener('click', function() {
+    copyText(draftText, this);
+  });
+}
+
+// ── Tab 2: Deadline Reset ──────────────────────────
+document.getElementById('btn-deadline').addEventListener('click', async () => {
+  const btn = document.getElementById('btn-deadline');
+  const output = document.getElementById('deadline-output');
+
+  const payload = {
+    clientName: document.getElementById('dl-client').value.trim(),
+    projectName: document.getElementById('dl-project').value.trim(),
+    originalDeadline: document.getElementById('dl-original').value.trim(),
+    revisedDeadline: document.getElementById('dl-revised').value.trim(),
+    reason: document.getElementById('dl-reason').value,
+    additionalContext: document.getElementById('dl-context').value.trim(),
+    tone: selectedTone
+  };
+
+  if (!payload.clientName || !payload.projectName) {
+    alert('Client name and project name are required.');
+    return;
+  }
+
+  btn.disabled = true;
+  showLoading(output);
+
+  try {
+    const res = await fetch('/api/pm/deadline-reset', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+    renderDeadline(output, data.message);
+  } catch (e) {
+    output.innerHTML = `<div style="color:#dc2626;padding:16px;font-size:13px;">Error: ${e.message}</div>`;
+  } finally {
+    btn.disabled = false;
+  }
+});
+
+function renderDeadline(container, message) {
+  container.innerHTML = `
+    <div class="message-header">
+      <div class="card-title" style="margin-bottom:0;"><span class="card-title-icon">✉️</span>Client Message</div>
+      <button class="btn-copy" id="copy-msg">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+        Copy
+      </button>
+    </div>
+    <div class="message-body">${esc(message)}</div>
+  `;
+  document.getElementById('copy-msg').addEventListener('click', function() {
+    copyText(message, this);
+  });
+}
+
+// ── Tab 3: Audit ───────────────────────────────────
+document.getElementById('btn-audit').addEventListener('click', async () => {
+  const btn = document.getElementById('btn-audit');
+  const emptyEl = document.getElementById('audit-empty');
+  const resultsEl = document.getElementById('audit-results');
+
+  const brief = document.getElementById('audit-brief').value.trim();
+  const deliverable = document.getElementById('audit-deliverable').value.trim();
+  const deliverableType = document.getElementById('audit-type').value;
+
+  if (!brief || !deliverable) {
+    alert('Please fill in both the brief and deliverable fields.');
+    return;
+  }
+
+  btn.disabled = true;
+  emptyEl.style.display = 'flex';
+  resultsEl.style.display = 'none';
+  emptyEl.innerHTML = `
+    <div class="loading-wrap">
+      <div class="spinner"></div>
+      <div>Running audit with Claude AI…</div>
+    </div>`;
+
+  try {
+    const res = await fetch('/api/pm/brief-audit', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ brief, deliverable, deliverableType })
+    });
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+    renderAudit(data);
+    emptyEl.style.display = 'none';
+    resultsEl.style.display = 'block';
+  } catch (e) {
+    emptyEl.innerHTML = `<div style="color:#dc2626;padding:16px;font-size:13px;">Error: ${e.message}</div>`;
+  } finally {
+    btn.disabled = false;
+  }
+});
+
+function renderAudit(d) {
+  const s = d.summary || {};
+  document.getElementById('audit-stats').innerHTML = `
+    <div class="stat-card met">
+      <div class="stat-number">${s.met || 0}</div>
+      <div class="stat-label">Requirements Met</div>
+    </div>
+    <div class="stat-card partial">
+      <div class="stat-number">${s.partial || 0}</div>
+      <div class="stat-label">Partial Matches</div>
+    </div>
+    <div class="stat-card missing">
+      <div class="stat-number">${s.missing || 0}</div>
+      <div class="stat-label">Missing Items</div>
+    </div>
+  `;
+
+  const rows = (d.requirements || []).map(r => {
+    const status = r.status || 'Missing';
+    const badgeClass = status === 'Met' ? 'badge-met' : status === 'Partial' ? 'badge-partial' : 'badge-missing';
+    return `<tr>
+      <td>${esc(r.requirement || '')}</td>
+      <td><span class="badge ${badgeClass}">${esc(status)}</span></td>
+      <td>${esc(r.note || '')}</td>
+    </tr>`;
+  }).join('');
+  document.getElementById('audit-tbody').innerHTML = rows;
+
+  const revText = d.revisionBrief || '';
+  document.getElementById('audit-revision').textContent = revText;
+
+  document.getElementById('copy-revision').addEventListener('click', function() {
+    copyText(revText, this);
+  });
+}
+
+// ── Escape HTML ────────────────────────────────────
+function esc(str) {
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/\n/g, '<br>');
+}
+</script>
+</body>
+</html>
